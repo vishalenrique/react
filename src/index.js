@@ -17,7 +17,7 @@ import './index.css';
       return (
       <Square 
       value={this.props.squares[i]} 
-      onClick = {()=>this.props.handleClick(i)}/>
+      onClick = {()=>this.props.onClick(i)}/>
       );
     }
 
@@ -54,35 +54,69 @@ import './index.css';
         history:[{
           squares: Array(9).fill(null)
         }],
+        historyCoordinates: Array(9).fill(null),
+        stepNumber: 0,
         xIsNext:true,
       };
     }
 
     handleClick(i){
-      const history = this.state.history;
+      const history = this.state.history.slice(0,this.state.stepNumber + 1);
+      const historyCoordinates = this.state.historyCoordinates.slice(0,this.state.stepNumber + 1);
       const current = history[history.length - 1];
       const squares = current.squares.slice();
       if (calculateWinner(squares) || squares[i]) {
         return;
       }
       squares[i] = this.state.xIsNext? 'X' : 'O';
+      const coordinates = this.getCoordinates(i)
       this.setState({
         history: history.concat([{squares: squares,}]),
+        stepNumber:history.length,
         xIsNext: !this.state.xIsNext,
+        historyCoordinates:historyCoordinates.concat(coordinates),
       });
     }
 
+    jumpTo(step){
+      this.setState({
+        stepNumber:step,
+        xIsNext:(step%2) === 0,
+      });
+    }
+
+    getCoordinates(currentPosition){
+      var result;
+      if(currentPosition < 3){
+        result ="(1,"; 
+      }else if(currentPosition < 6){
+        result ="(2,"; 
+      }else if(currentPosition < 9){
+        result ="(3,"; 
+      }
+     switch(currentPosition%3){
+       case 0:result += "1)";
+       break;
+       case 1:result += "2)";
+       break;
+       case 2:result += "3)";
+       break;
+       default: result += "";
+     }
+     return result;
+  }
+
     render() {
       const history = this.state.history;
-      const current = history[history.length - 1];
+      const current = history[this.state.stepNumber];
       const winner  = calculateWinner(current.squares);
 
       const moves = history.map((step, move) => {
         const desc = move ?
-          'Go to move #' + move :
+          'Go to move #' + move +"  " +this.state.historyCoordinates[move]:
           'Go to game start';
         return (
-          <li>
+          <li key={move}>
             <button onClick={() => this.jumpTo(move)}>{desc}</button>
           </li>
         );
@@ -93,6 +127,10 @@ import './index.css';
       status = 'Winner: ' + winner;
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+    }
+
+    if(history.length === 10){
+      status = 'Game drawn';
     }
 
       return (
